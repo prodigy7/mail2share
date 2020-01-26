@@ -6,11 +6,11 @@ The script was developed from the situation to provide invoices in a simple way 
 
 ## Requirements
 
-The script was tested with Debian GNU/Linux 9. Packages needed are getmail, uudeview and curl.
+The script was tested with Debian GNU/Linux 9. Packages needed are getmail, ripmime and curl.
 
 Command for install in debian:
 ```
-apt install getmail4 uudeview curl
+apt install getmail4 ripmime curl
 ```
 
 ## Setup

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+LOCKFILE=/tmp/mail2share.lock
+
+if [ -f $LOCKFILE ] ; then
+    echo ""
+    echo "Lock file found, script is already running!"
+    echo ""
+    exit 1
+fi
+
 which getmail >/dev/null;
 RETURNCODE=${PIPESTATUS[0]}
 if [ "$RETURNCODE" -ne 0 ] ; then
@@ -10,12 +19,12 @@ if [ "$RETURNCODE" -ne 0 ] ; then
     exit 1
 fi
 
-which uudeview >/dev/null;
+which ripmime >/dev/null;
 RETURNCODE=${PIPESTATUS[0]}
 if [ "$RETURNCODE" -ne 0 ] ; then
     echo ""
-    echo "Requirement 'uudeview' not found. Please install!"
-    echo " * Debian: apt get install uudeview"
+    echo "Requirement 'ripmime' not found. Please install!"
+    echo " * Debian: apt get install ripmime"
     echo ""
     exit 1
 fi
@@ -122,7 +131,8 @@ shopt -s nullglob
 for MAIL in $MAILDIR/new/*
 do
     echo "Processing : $MAIL" >> $LOGFILE
-    uudeview $MAIL -i +a -q +e .pdf -p $ATTACH_DIR/ 2>&1 | tee $LOGFILE_ERROR >> $LOGFILE
+    ripmime -i $MAIL -v -d $ATTACH_DIR/ 2>&1 | tee $LOGFILE_ERROR >> $LOGFILE
+    rm $ATTACH_DIR/textfile* 2>&1 | tee $LOGFILE_ERROR >> $LOGFILE
     RETURNCODE=${PIPESTATUS[0]}
     if [ "$RETURNCODE" -ne 0 ] ; then
         echo "[$(date)] An error has occurred get attachments from $MAIL (code $RETURNCODE)" >> $LOGFILE_ERROR
@@ -156,7 +166,7 @@ find $ATTACH_DIR -type f -name "*" -print0 | while IFS= read -r -d '' FILE; do
         rm $LOGFILE_ERROR
         exit 1
     else
-        rm "$FILE"
+        #rm "$FILE"
         if [ -f $LOGFILE_ERROR ] ; then rm $LOGFILE_ERROR; fi
     fi
 done
