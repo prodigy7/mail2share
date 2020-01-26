@@ -60,26 +60,37 @@ if [ -z "$SMB_USER" ] ; then
     echo ""
     echo "Please define SMB_USER in $BASEPATH/conf/fetchmails.conf"
     echo ""
+    exit 1
 fi
 if [ -z "$SMB_PASS" ] ; then
     echo ""
     echo "Please define SMB_PASS in $BASEPATH/conf/fetchmails.conf"
     echo ""
+    exit 1
 fi
 if [ -z "$SMB_PATH" ] ; then
     echo ""
     echo "Please define SMB_PATH in $BASEPATH/conf/fetchmails.conf"
     echo ""
+    exit 1
 fi
-if [ -z "$SMB_TYPE" -o "$SMB_TYPE" != "curl" -o "$SMB_TYPE" != "mount" ] ; then
+if [ -z "$SMB_TYPE" ] ; then
     echo ""
     echo "Please define SMB_TYPE in $BASEPATH/conf/fetchmails.conf with 'curl' or 'mount' as transfer method!"
     echo ""
+    exit 1
+fi
+if [ "$SMB_TYPE" != "curl" -a "$SMB_TYPE" != "mount" ] ; then
+    echo ""
+    echo "Please define SMB_TYPE in $BASEPATH/conf/fetchmails.conf with 'curl' or 'mount' as transfer method!"
+    echo ""
+    exit 1
 fi
 if [ -z "$POSTMASTER" ] ; then
     echo ""
     echo "Please define POSTMASTER in $BASEPATH/conf/fetchmails.conf"
     echo ""
+    exit 1
 fi
 
 # Check requirements
@@ -102,7 +113,7 @@ if [ "$SMB_TYPE" == "mount" ] ; then
     mountpoint $ATTACH_DIR >/dev/null 2>&1
     RETURNCODE=${PIPESTATUS[0]}
     if [ "$RETURNCODE" -ne 0 ] ; then
-        echo "[$(date)] Attachment directory is not mounted (code $RETURNCODE)" >> $LOGFILE_ERROR
+        echo "[$(date)] Attachment directory $ATTACH_DIR is not mounted (code $RETURNCODE)" >> $LOGFILE_ERROR
         if [ ! -z "$POSTMASTER" ] ; then
             cat $LOGFILE_ERROR | mailx -s "[fetchmails] An error has occurred" $POSTMASTER
         fi
@@ -116,7 +127,7 @@ if [ "$SMB_TYPE" == "mount" ] ; then
     touch $ATTACH_DIR/.test >/dev/null 2>&1
     RETURNCODE=${PIPESTATUS[0]}
     if [ "$RETURNCODE" -ne 0 ] ; then
-        echo "[$(date)] Attachment directory is not writeable (code $RETURNCODE)" >> $LOGFILE_ERROR
+        echo "[$(date)] Attachment directory $ATTACH_DIR is not writeable (code $RETURNCODE)" >> $LOGFILE_ERROR
         if [ ! -z "$POSTMASTER" ] ; then
             cat $LOGFILE_ERROR | mailx -s "[fetchmails] An error has occurred" $POSTMASTER
         fi
