@@ -1,0 +1,15 @@
+[retriever]
+type=SimpleIMAPSSLRetriever
+server=
+username=
+password=
+mailboxes=("INBOX.Archivierung",)
+move_on_delete="INBOX.Archivierung.Erledigt"
+
+[destination]
+type=Maildir
+path=/opt/mail2share/mails/
+
+[options]
+delete=true
+message_log=/opt/mail2share/log/getmail.log

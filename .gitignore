@@ -1,0 +1,5 @@
+conf/*.conf
+conf/oldmail*
+attachments/*
+log/*
+mails/*
