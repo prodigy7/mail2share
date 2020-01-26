@@ -124,7 +124,7 @@ if [ "$SMB_TYPE" == "mount" ] ; then
         if [ -f $ATTACH_DIR/.test ] ; then rm $ATTACH_DIR/.test; fi
     fi
 
-    touch $ATTACH_DIR/.test >/dev/null 2>&1
+    touch -c $ATTACH_DIR/.test >/dev/null 2>&1
     RETURNCODE=${PIPESTATUS[0]}
     if [ "$RETURNCODE" -ne 0 ] ; then
         echo "[$(date)] Attachment directory $ATTACH_DIR is not writeable (code $RETURNCODE)" >> $LOGFILE_ERROR
