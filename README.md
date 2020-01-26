@@ -25,7 +25,13 @@ POSTMASTER= <- Recipient for script error mails
 SMB_USER=   <- Username for samba share
 SMB_PASS=   <- Password for samba share
 SMB_PATH=   <- Path for storing attachments
+SMB_TYPE=   <- Could 'curl' or 'mount'
 ```
+
+If ``SMB_TYPE`` is set ``mount``, the script expect that the attachment directory is a mounted directory. If checks fail, script will report and stop.
+If ``SMB_TYPE`` is set ``curl``, the script will transfer files with curls.
+
+Working with ``mount`` can handle the situation, files with same name already exists. If processing file at remote does not work, transfering files with ``curl`` could maybe overwrite existing files.
 
 ### Mailbox configuration
 

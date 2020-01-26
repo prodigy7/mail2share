@@ -71,6 +71,11 @@ if [ -z "$SMB_PATH" ] ; then
     echo "Please define SMB_PATH in $BASEPATH/conf/fetchmails.conf"
     echo ""
 fi
+if [ -z "$SMB_TYPE" -o "$SMB_TYPE" != "curl" -o "$SMB_TYPE" != "mount" ] ; then
+    echo ""
+    echo "Please define SMB_TYPE in $BASEPATH/conf/fetchmails.conf with 'curl' or 'mount' as transfer method!"
+    echo ""
+fi
 if [ -z "$POSTMASTER" ] ; then
     echo ""
     echo "Please define POSTMASTER in $BASEPATH/conf/fetchmails.conf"
@@ -91,6 +96,36 @@ fi
 if [ ! -d $ATTACH_DIR ] ; then
     echo "> $ATTACH_DIR does not exist, create."
     mkdir -p $ATTACH_DIR
+fi
+
+if [ "$SMB_TYPE" == "mount" ] ; then
+    mountpoint $ATTACH_DIR >/dev/null 2>&1
+    RETURNCODE=${PIPESTATUS[0]}
+    if [ "$RETURNCODE" -ne 0 ] ; then
+        echo "[$(date)] Attachment directory is not mounted (code $RETURNCODE)" >> $LOGFILE_ERROR
+        if [ ! -z "$POSTMASTER" ] ; then
+            cat $LOGFILE_ERROR | mailx -s "[fetchmails] An error has occurred" $POSTMASTER
+        fi
+        cat $LOGFILE_ERROR
+        rm $LOGFILE_ERROR
+        exit 1
+    else
+        if [ -f $ATTACH_DIR/.test ] ; then rm $ATTACH_DIR/.test; fi
+    fi
+
+    touch $ATTACH_DIR/.test >/dev/null 2>&1
+    RETURNCODE=${PIPESTATUS[0]}
+    if [ "$RETURNCODE" -ne 0 ] ; then
+        echo "[$(date)] Attachment directory is not writeable (code $RETURNCODE)" >> $LOGFILE_ERROR
+        if [ ! -z "$POSTMASTER" ] ; then
+            cat $LOGFILE_ERROR | mailx -s "[fetchmails] An error has occurred" $POSTMASTER
+        fi
+        cat $LOGFILE_ERROR
+        rm $LOGFILE_ERROR
+        exit 1
+    else
+        if [ -f $ATTACH_DIR/.test ] ; then rm $ATTACH_DIR/.test; fi
+    fi
 fi
 
 # Create log file if it does not exist
@@ -152,21 +187,23 @@ do
 done
 shopt -u nullglob
 
-# Processing new attachments
-find $ATTACH_DIR -type f -name "*" -print0 | while IFS= read -r -d '' FILE; do
-    echo "Transfer $FILE" >> $LOGFILE
-    curl --upload-file "$FILE" -u $SMB_USER:$SMB_PASS smb://$SMB_PATH 2>&1 | tee $LOGFILE_ERROR >> $LOGFILE
-    RETURNCODE=${PIPESTATUS[0]}
-    if [ "$RETURNCODE" -ne 0 ] ; then
-        echo "[$(date)] An error has occurred transfer attachment to "$FILE" target (code $RETURNCODE)" >> $LOGFILE_ERROR
-        if [ ! -z "$POSTMASTER" ] ; then
-            cat $LOGFILE_ERROR | mailx -s "[fetchmails] An error has occurred" $POSTMASTER
+# Processing new attachments with curl, when set
+if [ "$SMB_TYPE" == "curl" ] ; then
+    find $ATTACH_DIR -type f -name "*" -print0 | while IFS= read -r -d '' FILE; do
+        echo "Transfer $FILE" >> $LOGFILE
+        curl --upload-file "$FILE" -u $SMB_USER:$SMB_PASS smb://$SMB_PATH 2>&1 | tee $LOGFILE_ERROR >> $LOGFILE
+        RETURNCODE=${PIPESTATUS[0]}
+        if [ "$RETURNCODE" -ne 0 ] ; then
+            echo "[$(date)] An error has occurred transfer attachment to "$FILE" target (code $RETURNCODE)" >> $LOGFILE_ERROR
+            if [ ! -z "$POSTMASTER" ] ; then
+                cat $LOGFILE_ERROR | mailx -s "[fetchmails] An error has occurred" $POSTMASTER
+            fi
+            cat $LOGFILE_ERROR
+            rm $LOGFILE_ERROR
+            exit 1
+        else
+            rm "$FILE"
+            if [ -f $LOGFILE_ERROR ] ; then rm $LOGFILE_ERROR; fi
         fi
-        cat $LOGFILE_ERROR
-        rm $LOGFILE_ERROR
-        exit 1
-    else
-        #rm "$FILE"
-        if [ -f $LOGFILE_ERROR ] ; then rm $LOGFILE_ERROR; fi
-    fi
-done
+    done
+fi
